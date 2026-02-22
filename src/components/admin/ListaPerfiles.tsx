@@ -307,7 +307,6 @@ const ListaPerfiles: React.FC<{ role: 'abogado' | 'estudiante' | 'cliente'; onCa
                         
                         <div className={`space-y-4 flex-grow pr-2 ${scrollbarStyle}`}>
                             
-                            {/* VISTA CLIENTE NORMAL */}
                             {viewCasesClient && clientCases.map(c => (
                                 <div key={c.id} onDoubleClick={() => handleOpenCaseHistory(c)} className="bg-zinc-900 border border-zinc-800 p-5 hover:border-zinc-500 cursor-pointer transition-colors relative">
                                     <span className="absolute top-4 right-4 text-[10px] font-black uppercase bg-zinc-800 px-2 py-1 text-zinc-400">{c.estado}</span>
@@ -316,32 +315,32 @@ const ListaPerfiles: React.FC<{ role: 'abogado' | 'estudiante' | 'cliente'; onCa
                                 </div>
                             ))}
 
-                            {/* VISTA CASCADA (ABOGADO/ESTUDIANTE) - CERO BORDES NI CAJAS */}
+                            {/* VISTA CASCADA: LA SOLUCIÓN DEFINITIVA A LOS RECUADROS */}
                             {viewAssignedProfile && Object.values(assignedClientsDict).length === 0 && <p className="text-zinc-500">No hay casos asignados.</p>}
                             {viewAssignedProfile && Object.values(assignedClientsDict).map(({client, cases}) => (
-                                <div key={client.id} className="border border-zinc-800 bg-zinc-950 mb-4">
+                                <div key={client.id} className="bg-zinc-950 mb-4">
                                     
-                                    <div className="flex bg-zinc-900 border-b border-zinc-800 group items-center pr-6">
-                                        <div onClick={() => setExpandedClientId(expandedClientId === client.id ? null : client.id)} className="flex-grow p-4 cursor-pointer hover:bg-zinc-800 transition-colors">
+                                    {/* Aplicamos hover al padre (flex) para que toda la fila cambie de color sin recuadros */}
+                                    <div className="flex bg-zinc-900 group items-center pr-6 hover:bg-zinc-800 transition-colors">
+                                        <div onClick={() => setExpandedClientId(expandedClientId === client.id ? null : client.id)} className="flex-grow p-4 cursor-pointer">
                                             <h3 className="font-bold text-white uppercase tracking-widest">CLIENTE: {client.primer_nombre} {client.primer_apellido}</h3>
                                             <span className="text-zinc-500 text-xs">{cases.length} caso(s) asignado(s)</span>
                                         </div>
-                                        {/* Botón desnudo */}
-                                        <button type="button" onClick={(e) => handleUnassignClient(e, client.id)} className="text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 z-10 relative" title="Desasignar todos los casos">
+                                        <button type="button" onClick={(e) => handleUnassignClient(e, client.id)} className="p-2 text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 z-10 relative" title="Desasignar todos los casos">
                                             <TrashIcon />
                                         </button>
                                     </div>
                                     
                                     {expandedClientId === client.id && (
-                                        <div className="bg-black">
+                                        <div>
                                             {cases.map(c => (
-                                                <div key={c.id} className="flex group/case border-b border-zinc-900 last:border-0 items-center pr-6">
-                                                    <div className="flex-grow p-4 pl-8 cursor-pointer hover:bg-zinc-900 transition-colors" onDoubleClick={() => handleOpenCaseHistory(c)}>
+                                                /* Aplicamos hover al padre (flex) para que toda la fila cambie de color sin recuadros */
+                                                <div key={c.id} className="flex bg-black group/case items-center pr-6 hover:bg-zinc-900 transition-colors">
+                                                    <div className="flex-grow p-4 pl-8 cursor-pointer" onDoubleClick={() => handleOpenCaseHistory(c)}>
                                                         <h4 className="font-bold text-sm text-white">{c.titulo}</h4>
                                                         <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{c.descripcion}</p>
                                                     </div>
-                                                    {/* Botón desnudo */}
-                                                    <button type="button" onClick={(e) => handleUnassignCase(e, c.id, client.id)} className="text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover/case:opacity-100 z-10 relative" title="Desasignar solo este caso">
+                                                    <button type="button" onClick={(e) => handleUnassignCase(e, c.id, client.id)} className="p-2 text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover/case:opacity-100 z-10 relative" title="Desasignar solo este caso">
                                                         <XMarkIcon />
                                                     </button>
                                                 </div>
@@ -464,6 +463,7 @@ const ListaPerfiles: React.FC<{ role: 'abogado' | 'estudiante' | 'cliente'; onCa
                 )}
             </Modal>
 
+            {/* MODAL: ASIGNAR ABOGADO A CLIENTE/CASOS */}
             <Modal isOpen={!!assignLawyer} onClose={() => setAssignLawyer(null)}>
                 <div className="p-8 flex flex-col max-h-[85vh]">
                     <h2 className="text-xl font-bold mb-6 italic tracking-widest uppercase text-white">ASIGNAR A: {assignLawyer?.primer_nombre}</h2>

@@ -13,7 +13,7 @@ const getStartOfWeek = (date: Date) => {
 
 const toYYYYMMDD = (date: Date) => date.toISOString().split('T')[0];
 
-// --- Form Helper Components (Diseño Premium) ---
+// --- Form Helper Components ---
 const InputField = ({ label, type = 'text', ...props }: any) => (
     <div>
         <label className="block text-zinc-500 text-[10px] font-black mb-2 uppercase tracking-[0.3em]">{label}</label>
@@ -42,7 +42,6 @@ const SelectField = ({ label, options, ...props }: any) => (
     </div>
 );
 
-// --- MODAL BASE PREMIUM ---
 const Modal: React.FC<{ isOpen: boolean; onClose: () => void; children: React.ReactNode }> = ({ isOpen, onClose, children }) => {
     if (!isOpen) return null;
     return (
@@ -69,14 +68,12 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; hour: number } | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   
-  // Form state
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [taskDescription, setTaskDescription] = useState('');
   const [hoursWorked, setHoursWorked] = useState<number>(1);
   const [rate, setRate] = useState<number>(0);
 
-  // NUEVO ESTADO PARA EL MODAL DE CONFIRMACIÓN
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
   const fetchInitialData = useCallback(async () => {
@@ -118,7 +115,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
     fetchInitialData().then(() => fetchWeekEntries());
   }, [fetchInitialData, fetchWeekEntries]);
 
-  // Navegación de semanas
   const changeWeek = (direction: 'prev' | 'next') => {
       setCurrentDate(prev => {
           const newDate = new Date(prev);
@@ -157,9 +153,15 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
     }
 
     setActionLoading(true);
+    
+    // --- AQUÍ ESTABA EL ERROR ---
+    // Si estamos editando un registro, mantenemos el perfil_id del creador original, 
+    // no lo sobreescribimos con el del Admin actual.
+    const finalPerfilId = editingEntry ? editingEntry.perfil_id : currentUserProfile.id;
+
     const entryData = {
       id: editingEntry?.id,
-      perfil_id: currentUserProfile.id,
+      perfil_id: finalPerfilId, 
       caso_id: selectedCaseId,
       descripcion_tarea: taskDescription,
       fecha_tarea: selectedSlot.date,
@@ -181,7 +183,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
     }
   };
 
-  // --- LÓGICA DE BORRADO CON MODAL OSCURO ---
   const handleDeleteEntry = () => {
     if (!editingEntry) return;
     
@@ -194,8 +195,8 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
             try {
                 const { error } = await supabase.from('time_entries').delete().eq('id', editingEntry.id);
                 if (error) throw error;
-                setIsModalOpen(false); // Cierra el formulario
-                fetchWeekEntries();    // Recarga los datos
+                setIsModalOpen(false);
+                fetchWeekEntries();
             } catch (error: any) {
                 alert(`Error al eliminar: ${error.message}`);
             } finally {
@@ -209,12 +210,10 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
     e.dataTransfer.setData('text/plain', entry.id.toString());
   };
 
-  // Drag & Drop Sin Rebote (Optimistic UI)
   const handleDrop = async (e: React.DragEvent, date: string, hour: number) => {
     e.preventDefault();
     const entryId = e.dataTransfer.getData('text/plain');
 
-    // 1. MAGIA VISUAL: Actualización Inmediata en pantalla
     setTimeEntries(prev => 
       prev.map(entry => 
         entry.id === entryId 
@@ -223,7 +222,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
       )
     );
 
-    // 2. GUARDADO SILENCIOSO: En la base de datos
     try {
       const { error } = await supabase
         .from('time_entries')
@@ -250,13 +248,11 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
     <Fragment>
       <div className="bg-black w-full animate-in fade-in duration-500 text-white p-4 font-mono">
         
-        {/* ENCABEZADO PREMIUM */}
         <header className="flex items-center justify-between mb-8 pb-4 border-b border-zinc-900">
             <h1 className="text-3xl font-black uppercase tracking-tighter italic text-white">Time Billing Semanal</h1>
             {onCancel && <button onClick={onCancel} className="text-zinc-400 hover:text-white font-black py-2 px-6 transition-colors uppercase text-[10px] tracking-[0.3em]">Volver</button>}
         </header>
 
-        {/* NAVEGACIÓN DE SEMANAS */}
         <div className="flex items-center justify-between mb-6 px-2">
             <button onClick={() => changeWeek('prev')} className="text-zinc-400 hover:text-white transition-colors font-bold text-sm">‹ Semana Anterior</button>
             <h2 className="text-lg font-bold text-white tracking-wider">
@@ -267,9 +263,7 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
 
         {loading && <p className="text-center text-zinc-500 mb-4">Cargando actividades...</p>}
 
-        {/* CUADRÍCULA DEL CALENDARIO */}
         <div className="grid grid-cols-[auto_1fr] gap-0 border-t border-l border-zinc-800 bg-black">
-          {/* Columna de Horas */}
           <div className="grid grid-rows-[auto_1fr]">
             <div className="p-2 border-r border-b border-zinc-800 h-16"></div>
             <div className="grid" style={{ gridTemplateRows: `repeat(${hours.length}, minmax(60px, auto))` }}>
@@ -281,7 +275,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
             </div>
           </div>
 
-          {/* Días de la Semana */}
           <div className="grid grid-cols-7">
             {weekDays.map((day, dayIndex) => (
               <div key={dayIndex} className="border-r border-zinc-800">
@@ -303,7 +296,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
                     ))}
                   </div>
 
-                  {/* Tarjetas Absolutas (Drag & Drop) */}
                   <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
                     {timeEntries
                       .filter(entry => entry.fecha_tarea === toYYYYMMDD(day))
@@ -334,7 +326,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
         </div>
       </div>
 
-      {/* FORMULARIO MODAL */}
       <Modal isOpen={isModalOpen && !!selectedSlot} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSaveEntry}>
             <div className="p-8">
@@ -346,7 +337,7 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
                     <div>
                         <label className="block text-zinc-500 text-[10px] font-black mb-2 uppercase tracking-[0.3em]">Abogado</label>
                         <div className="w-full py-2 px-0 bg-transparent border-b-2 border-zinc-800 text-white opacity-70">
-                            {currentUserProfile?.primer_nombre} {currentUserProfile?.primer_apellido}
+                            {editingEntry ? `${editingEntry.profiles?.primer_nombre} ${editingEntry.profiles?.primer_apellido}` : `${currentUserProfile?.primer_nombre} ${currentUserProfile?.primer_apellido}`}
                         </div>
                     </div>
                     
@@ -414,7 +405,6 @@ const TimeBillingMaestro: React.FC<{ onCancel?: () => void }> = ({ onCancel }) =
         </form>
       </Modal>
 
-      {/* NUEVO MODAL OSCURO DE CONFIRMACIÓN DE ELIMINACIÓN */}
       <Modal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}>
           <div className="p-8 text-center">
               <h2 className="text-xl font-bold text-white mb-4 italic tracking-widest uppercase">{confirmDialog.title}</h2>
